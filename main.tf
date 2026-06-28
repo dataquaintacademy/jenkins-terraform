@@ -3,7 +3,7 @@ resource "aws_instance" "web" {
   instance_type = var.instance_type
 
   tags = {
-    Name      = "Jenkins-Provisioned-Instance"
+    Name      = var.instance_name
     ManagedBy = "Terraform"
   }
 }
