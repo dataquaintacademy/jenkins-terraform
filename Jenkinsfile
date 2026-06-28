@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     parameters {
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Action to perform on the infrastructure')
         string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS Region to deploy the EC2 instance')
         string(name: 'AMI_ID', description: 'The AMI ID for the EC2 instance (e.g., ami-0c55b159cbfafe1f0)')
         choice(name: 'INSTANCE_TYPE', choices: ['t2.micro', 't2.small', 't3.micro', 't3.small'], description: 'EC2 Instance Type')
@@ -30,6 +31,9 @@ pipeline {
         }
 
         stage('Terraform Plan') {
+            when {
+                expression { params.ACTION == 'apply' }
+            }
             steps {
                 sh """
                     terraform plan \
@@ -41,9 +45,26 @@ pipeline {
         }
 
         stage('Terraform Apply') {
+            when {
+                expression { params.ACTION == 'apply' }
+            }
             steps {
                 sh """
                     terraform apply -auto-approve \
+                    -var="aws_region=${params.AWS_REGION}" \
+                    -var="ami_id=${params.AMI_ID}" \
+                    -var="instance_type=${params.INSTANCE_TYPE}"
+                """
+            }
+        }
+
+        stage('Terraform Destroy') {
+            when {
+                expression { params.ACTION == 'destroy' }
+            }
+            steps {
+                sh """
+                    terraform destroy -auto-approve \
                     -var="aws_region=${params.AWS_REGION}" \
                     -var="ami_id=${params.AMI_ID}" \
                     -var="instance_type=${params.INSTANCE_TYPE}"
